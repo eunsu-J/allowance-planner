@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>가계부J — 대학생 예산 재조정 가계부</title>
+  <style>
+    :root {
+      --primary: #3182f6;
+      --primary-light: #e8f3ff;
+      --primary-dark: #1b64da;
+      --bg: #f4f6f8;
+      --card-bg: #ffffff;
+      --text-main: #191f28;
+      --text-sub: #8b95a1;
+      --text-muted: #b0b8c1;
+      --danger: #f04452;
+      --danger-light: #feecee;
+      --warning: #ff9100;
+      --warning-light: #fff5e5;
+      --success: #00b06b;
+      --success-light: #e6f8f1;
+      --border: #e5e8eb;
+      --shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #2b303b;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      color: var(--text-main);
+    }
+
+    /* 360px 모바일 화면 프레임 */
+    .app-container {
+      width: 100%;
+      max-width: 420px;
+      min-width: 360px;
+      background-color: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 0 24px rgba(0,0,0,0.25);
+    }
+
+    /* 상단 테스트 컨트롤러 바 */
+    .test-controller {
+      background-color: #1a1e27;
+      color: #fff;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .test-btn-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .test-btn {
+      background: #2f3644;
+      color: #e2e8f0;
+      border: 1px solid #4a5568;
+      padding: 5px 9px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      transition: background 0.15s;
+    }
+
+    .test-btn:active {
+      background: #4a5568;
+    }
+
+    /* 헤더 */
+    .app-header {
+      padding: 16px 20px 12px;
+      background: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .app-title-area h1 {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-sub {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 12px;
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .header-date {
+      font-size: 12px;
+      color: var(--text-sub);
+      font-weight: 600;
+    }
+
+    /* 메인 스크롤 콘텐츠 */
+    .content-area {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+      padding-bottom: 40px;
+    }
+
+    /* 카드 공통 */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    /* 상태 알림 배너 */
+    .alert-banner {
+      padding: 14px 16px;
+      border-radius: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13px;
+      line-height: 1.45;
+      font-weight: 600;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .alert-warning {
+      background: var(--warning-light);
+      color: #b75500;
+      border: 1px solid #ffd599;
+    }
+
+    .alert-danger {
+      background: var(--danger-light);
+      color: #c92333;
+      border: 1px solid #fcced2;
+    }
+
+    .alert-icon {
+      font-size: 18px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    /* 1. 가용 예산 입력 및 요약 카드 */
+    .summary-card {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .budget-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .budget-info-text {
+      font-size: 12px;
+      color: var(--text-sub);
+      font-weight: 600;
+    }
+
+    .btn-edit-budget {
+      background: #fff;
+      border: 1px solid var(--border);
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 9px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-edit-budget:active {
+      background: var(--primary-light);
+    }
+
+    /* 예산 차액 (이번달 예산 - 지출 예산) 박스 */
+    .budget-diff-box {
+      background: #f0f7ff;
+      border: 1px solid #bae0fd;
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .budget-diff-box.negative {
+      background: #fff0f1;
+      border-color: #ffd0d5;
+    }
+
+    .budget-diff-label {
+      font-size: 12px;
+      color: var(--text-sub);
+      font-weight: 700;
+    }
+
+    .budget-diff-val {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .budget-diff-val.negative {
+      color: var(--danger);
+    }
+
+    .summary-label {
+      font-size: 13px;
+      color: var(--text-sub);
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .summary-amount {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.5px;
+    }
+
+    .summary-amount.danger {
+      color: var(--danger);
+    }
+
+    /* 프로그레스 바 */
+    .progress-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .progress-bar-bg {
+      height: 12px;
+      background: #e9ecef;
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.4s ease, background-color 0.4s ease;
+      width: 0%;
+      background-color: var(--primary);
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-sub);
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .spend-speed-badge {
+      color: var(--text-main);
+      font-weight: 700;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-size: 11px;
+    }
+
+    /* 일일 권장 지출 카드 */
+    .today-budget-card {
+      background: linear-gradient(145deg, #ffffff, #f9fafb);
+      border-left: 4px solid var(--primary);
+    }
+
+    .today-budget-card.warning-border {
+      border-left-color: var(--warning);
+    }
+
+    .today-budget-card.danger-border {
+      border-left-color: var(--danger);
+    }
+
+    .today-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .today-metric {
+      background: var(--bg);
+      padding: 12px;
+      border-radius: 12px;
+    }
+
+    .today-metric-title {
+      font-size: 11px;
+      color: var(--text-sub);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .today-metric-val {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* 3. 카테고리 2개 탭 버튼 */
+    .form-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .form-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .btn-import-yesterday {
+      background: var(--primary-light);
+      border: 1px solid #bfdbfe;
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 9px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s;
+    }
+
+    .btn-import-yesterday:active {
+      background: #bfdbfe;
+    }
+
+    .btn-import-yesterday:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: #f1f5f9;
+      border-color: var(--border);
+      color: var(--text-muted);
+    }
+
+    .category-two-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .category-two-btn {
+      flex: 1;
+      height: 48px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-sub);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+
+    .category-two-btn.active[data-cat="생활비"] {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .category-two-btn.active[data-cat="예상외 지출"] {
+      background: #fff0f1;
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .input-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .input-row label {
+      font-size: 12px;
+      color: var(--text-sub);
+      font-weight: 600;
+    }
+
+    .input-field {
+      width: 100%;
+      height: 44px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0 12px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+      transition: border-color 0.2s;
+      ime-mode: active;
+    }
+
+    .input-field:focus {
+      border-color: var(--primary);
+    }
+
+    /* 선호도 별점 */
+    .pref-rating-group {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .pref-btn {
+      flex: 1;
+      height: 38px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-sub);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .pref-btn.active {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .pref-hint {
+      font-size: 11px;
+      color: var(--text-sub);
+      margin-top: 4px;
+      line-height: 1.3;
+    }
+
+    .btn-submit {
+      width: 100%;
+      height: 46px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .btn-submit:active {
+      background: var(--primary-dark);
+      transform: scale(0.99);
+    }
+
+    /* 2. 지출 내역 리스트 (날짜별 누적 보관) */
+    .list-filter-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 6px;
+    }
+
+    .filter-tab {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+
+    .filter-tab.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .expense-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .expense-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--bg);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .expense-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .expense-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      border: 1px solid var(--border);
+    }
+
+    .expense-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .expense-name-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .expense-date-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: #e2e8f0;
+      color: #475569;
+    }
+
+    .expense-date-badge.today {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .expense-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .expense-tag-row {
+      font-size: 11px;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .cat-badge {
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 10px;
+    }
+
+    .cat-badge.life {
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+
+    .cat-badge.extra {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .pref-tag {
+      background: #f1f5f9;
+      color: #64748b;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 10px;
+    }
+
+    .pref-tag.low {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .pref-tag.high {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .expense-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .expense-amt {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .btn-del {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 4px;
+    }
+
+    .btn-del:hover {
+      color: var(--danger);
+    }
+
+    .empty-msg {
+      text-align: center;
+      padding: 24px 0;
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+
+    /* 모달 팝업 공통 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      justify-content: center;
+      align-items: flex-end;
+      z-index: 1000;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal-sheet {
+      width: 100%;
+      max-width: 420px;
+      background: #fff;
+      border-radius: 20px 20px 0 0;
+      padding: 24px 20px 32px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.15);
+      animation: slideUp 0.25s ease;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    .modal-desc {
+      font-size: 13px;
+      color: var(--text-sub);
+      line-height: 1.45;
+      margin-bottom: 18px;
+    }
+
+    .modal-btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .btn-modal-cancel {
+      flex: 1;
+      height: 46px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+
+    .btn-modal-apply {
+      flex: 2;
+      height: 46px;
+      background: var(--primary);
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- 상단 테스트 컨트롤러 바 (AGENTS.md 필수 버튼 2개) -->
+    <div class="test-controller">
+      <div>🧪 <strong>테스트 도구</strong></div>
+      <div class="test-btn-group">
+        <button class="test-btn" id="btnNextDay">📅 다음 날로 이동</button>
+        <button class="test-btn" id="btnResetAll">🔄 처음부터 다시</button>
+      </div>
+    </div>
+
+    <!-- 앱 헤더 -->
+    <header class="app-header">
+      <div class="app-title-area">
+        <h1>가계부J <span class="badge-sub">예산 재조율</span></h1>
+      </div>
+      <div class="header-date" id="displayHeaderDate">11월 1일 (1일차/30일)</div>
+    </header>
+
+    <!-- 메인 스크롤 콘텐츠 -->
+    <main class="content-area">
+
+      <!-- 상태 경고 배너 (동적) -->
+      <div id="statusBannerArea"></div>
+
+      <!-- 1. 가용 예산 & 지출 예산 & 차액 요약 카드 -->
+      <section class="card summary-card">
+        <!-- 1) 이번달 설정 예산 행 -->
+        <div class="budget-header-row">
+          <div class="budget-info-text">
+            <span>이번 달 설정 예산: </span>
+            <strong id="displayConfiguredBudget" style="color:var(--text-main);">600,000원</strong>
+          </div>
+          <button type="button" class="btn-edit-budget" id="btnOpenEditBudget">✏️ 예산 변경</button>
+        </div>
+
+        <!-- 2) 이번달 지출 예산 행 (신규) -->
+        <div class="budget-header-row">
+          <div class="budget-info-text">
+            <span>이번 달 지출 예산: </span>
+            <strong id="displayPlannedExpense" style="color:var(--text-main);">550,000원</strong>
+            <span style="font-size:11px; color:var(--text-sub); display:block; margin-top:2px;" id="displayPlannedDetail">
+              (매일 생활비 15,000원×30일 + 예상외 100,000원)
+            </span>
+          </div>
+          <button type="button" class="btn-edit-budget" id="btnOpenEditExpensePlan">✏️ 지출변경</button>
+        </div>
+
+        <!-- 3) 이번달 예산 - 이번달 지출 예산 계산 결과 출력 박스 (신규) -->
+        <div class="budget-diff-box" id="budgetDiffBox">
+          <div class="budget-diff-label">
+            <span>이번달 예산 − 지출 예산:</span>
+          </div>
+          <div class="budget-diff-val" id="displayBudgetDiff">+50,000원 (여유 자금)</div>
+        </div>
+
+        <!-- 남은 실제 가용 생활비 잔액 -->
+        <div class="summary-label" style="margin-top: 6px;">
+          <span>현재 남은 생활비 잔액</span>
+        </div>
+        <div class="summary-amount" id="displayRemainingBudget">0원</div>
+        
+        <div class="progress-wrapper">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="budgetProgressBar"></div>
+          </div>
+          <div class="progress-meta">
+            <span id="displaySpentInfo">실제 지출 0원 / 예산 0원</span>
+            <span id="displaySpendRate" class="spend-speed-badge">0% 소진 · 한 달 100% 남음</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 일일 권장 지출 및 오늘 지출 카드 -->
+      <section class="card today-budget-card" id="todayCard">
+        <div class="summary-label">
+          <span>📅 오늘 지출 가이드</span>
+          <span id="displayDaysLeftBadge" style="font-size:11px; color:var(--text-sub); font-weight:700;">남은 기간: 30일</span>
+        </div>
+        
+        <div class="today-grid">
+          <div class="today-metric">
+            <div class="today-metric-title">오늘 권장 생활비</div>
+            <div class="today-metric-val" id="displayDailyLimit">0원</div>
+          </div>
+          <div class="today-metric">
+            <div class="today-metric-title">오늘 실제 지출</div>
+            <div class="today-metric-val" id="displayTodaySpent">0원</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; font-size:12px; color:var(--text-sub); display:flex; justify-content:space-between;">
+          <span>오늘 남은 권장 한도:</span>
+          <strong id="displayTodayDiff" style="color:var(--primary); font-size:13px;">0원</strong>
+        </div>
+      </section>
+
+      <!-- 3. 실행 기록: 지출 입력 카드 -->
+      <section class="card">
+        <div class="form-header-row">
+          <h2 class="form-title">✏️ 지출 기록하기</h2>
+          <button type="button" class="btn-import-yesterday" id="btnImportYesterday">
+            📋 어제 생활비 가져오기
+          </button>
+        </div>
+        
+        <!-- 카테고리 2개 버튼 (생활비, 예상외 지출) -->
+        <div class="category-two-group" id="categoryGroup">
+          <button type="button" class="category-two-btn active" data-cat="생활비">
+            🥗 생활비 (식비·생필품)
+          </button>
+          <button type="button" class="category-two-btn" data-cat="예상외 지출">
+            ⚡ 예상외 지출 (쇼핑·여행)
+          </button>
+        </div>
+
+        <!-- 항목명 & 금액 (한국어 우선 입력 적용) -->
+        <div class="input-row">
+          <label for="inputExpenseName">지출 내용 (한글 우선)</label>
+          <input type="text" id="inputExpenseName" class="input-field" 
+                 placeholder="예: 학식 점심, 편의점 도시락, 커피" 
+                 maxlength="30" 
+                 lang="ko" 
+                 autocorrect="off" 
+                 autocapitalize="off" 
+                 spellcheck="false" 
+                 style="ime-mode: active;">
+        </div>
+
+        <div class="input-row">
+          <label for="inputExpenseAmount">금액 (원)</label>
+          <input type="number" id="inputExpenseAmount" class="input-field" placeholder="0" min="1" step="100">
+        </div>
+
+        <!-- 선호도 / 중요도 (1~5점) -->
+        <div class="input-row">
+          <label>지출 선호도 (예산 초과 시 절약 우선순위)</label>
+          <div class="pref-rating-group" id="prefRatingGroup">
+            <button type="button" class="pref-btn" data-score="1">1점<br><span style="font-size:9px;">후회</span></button>
+            <button type="button" class="pref-btn" data-score="2">2점<br><span style="font-size:9px;">아쉬움</span></button>
+            <button type="button" class="pref-btn active" data-score="3">3점<br><span style="font-size:9px;">보통</span></button>
+            <button type="button" class="pref-btn" data-score="4">4점<br><span style="font-size:9px;">만족</span></button>
+            <button type="button" class="pref-btn" data-score="5">5점<br><span style="font-size:9px;">필수</span></button>
+          </div>
+          <div class="pref-hint" id="prefHintText">💡 1~2점 지출은 예산 초과 시 앱이 우선 절약 대상으로 분석합니다.</div>
+        </div>
+
+        <button type="button" id="btnAddExpense" class="btn-submit">지출 등록하기</button>
+      </section>
+
+      <!-- 2. 지출 내역 리스트 (다음 날이 되어도 날짜와 함께 누적 보관) -->
+      <section class="card">
+        <div class="list-filter-bar">
+          <h2 class="form-title" style="margin-bottom:0;">📋 지출 내역 기록지</h2>
+          <div class="filter-tabs">
+            <button type="button" class="filter-tab active" id="tabFilterAll">전체 날짜</button>
+            <button type="button" class="filter-tab" id="tabFilterToday">오늘만</button>
+          </div>
+        </div>
+        
+        <div class="expense-list" id="expenseListArea">
+          <div class="empty-msg">등록된 지출 내역이 없습니다.</div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- 예산 직접 변경 모달 -->
+    <div class="modal-overlay" id="editBudgetModal">
+      <div class="modal-sheet">
+        <h2 class="modal-title">💵 가용 예산 변경</h2>
+        <p class="modal-desc">이번 달 사용할 총 가용 생활비를 원하는 금액으로 직접 입력해 주세요.</p>
+        
+        <div class="input-row">
+          <label for="editBudgetAmount">총 가용 예산 (원)</label>
+          <input type="number" id="editBudgetAmount" class="input-field" placeholder="예: 600000" min="10000" step="10000">
+        </div>
+
+        <div class="modal-btn-group">
+          <button type="button" class="btn-modal-cancel" id="btnCancelEditBudget">취소</button>
+          <button type="button" class="btn-modal-apply" id="btnSaveEditBudget">예산 저장하기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 지출변경 모달 (매일 생활비 & 예상외 지출 기입) -->
+    <div class="modal-overlay" id="editExpensePlanModal">
+      <div class="modal-sheet">
+        <h2 class="modal-title">📊 이번 달 지출 예산 설정</h2>
+        <p class="modal-desc">매일 쓸 생활비와 예상외 지출을 설정하여 이번 달 지출 예산을 계산합니다.</p>
+        
+        <div class="input-row">
+          <label for="planDailyLife">매일 소모되는 1일 생활비 (원)</label>
+          <input type="number" id="planDailyLife" class="input-field" placeholder="예: 15000" min="1000" step="1000">
+          <span style="font-size:11px; color:var(--text-sub);">* 30일 기준 총 <strong id="previewDailyMonth">450,000원</strong></span>
+        </div>
+
+        <div class="input-row" style="margin-top:10px;">
+          <label for="planExtraExpense">예상외 지출 예산 (쇼핑·여행 등, 원)</label>
+          <input type="number" id="planExtraExpense" class="input-field" placeholder="예: 100000" min="0" step="10000">
+        </div>
+
+        <div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:14px; margin:14px 0; font-size:13px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span style="color:var(--text-sub);">이번 달 지출 예산 합계:</span>
+            <strong id="previewTotalPlanned" style="color:var(--text-main);">550,000원</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:var(--text-sub);">이번 달 예산 − 지출 예산:</span>
+            <strong id="previewDiffResult" style="color:var(--primary);">+50,000원</strong>
+          </div>
+        </div>
+
+        <div class="modal-btn-group">
+          <button type="button" class="btn-modal-cancel" id="btnCancelExpensePlan">취소</button>
+          <button type="button" class="btn-modal-apply" id="btnSaveExpensePlan">지출 예산 저장하기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. 초기 예산 설정 모달 (최초 실행 또는 '처음부터 다시' 시 오픈) -->
+    <div class="modal-overlay" id="initModal">
+      <div class="modal-sheet">
+        <h2 class="modal-title">💰 한 달 예산 설정</h2>
+        <p class="modal-desc">한 달 동안 사용할 총 예산과 지출 계획을 입력해 주세요.</p>
+        
+        <div class="input-row">
+          <label for="initBudgetOnly">한 달 총 가용 예산 (원)</label>
+          <input type="number" id="initBudgetOnly" class="input-field" placeholder="예: 600000" value="600000" step="10000">
+        </div>
+
+        <div class="input-row">
+          <label for="initDailyLife">매일 소모되는 1일 생활비 (원)</label>
+          <input type="number" id="initDailyLife" class="input-field" placeholder="예: 15000" value="15000" step="1000">
+        </div>
+
+        <div class="input-row">
+          <label for="initExtraExpense">예상외 지출 예산 (원)</label>
+          <input type="number" id="initExtraExpense" class="input-field" placeholder="예: 100000" value="100000" step="10000">
+        </div>
+
+        <div style="background:var(--bg); padding:12px; border-radius:10px; margin:10px 0; font-size:13px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+            <span style="color:var(--text-sub);">이번 달 지출 예산:</span>
+            <strong id="initCalculatedPlanned" style="color:var(--text-main);">550,000원</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:var(--text-sub);">예산 차액 (예산 − 지출):</span>
+            <strong id="initCalculatedDiff" style="color:var(--primary);">+50,000원</strong>
+          </div>
+        </div>
+
+        <button type="button" id="btnSaveInitBudget" class="btn-submit" style="margin-top:12px;">가계부 시작하기</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /* ==========================================================================
+       가계부J — 핵심 비즈니스 로직 및 로컬 스토리지 상태 머신
+       ========================================================================== */
+    const STORAGE_KEY = 'kakeiboJ_app_state_v4';
+    const TOTAL_DAYS = 30;
+
+    const CATEGORY_ICONS = {
+      '생활비': '🥗',
+      '예상외 지출': '⚡'
+    };
+
+    let state = loadState();
+
+    let selectedCategory = '생활비';
+    let selectedPreference = 3;
+    let listFilterMode = 'all';
+
+    /* --------------------------------------------------------------------------
+       상태 로드 및 저장 (localStorage)
+       -------------------------------------------------------------------------- */
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          return JSON.parse(raw);
+        }
+      } catch (e) {
+        console.error('Failed to load state', e);
+      }
+      return null;
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.error('Failed to save state', e);
+      }
+    }
+
+    function formatWon(amt) {
+      const num = Number(amt) || 0;
+      return num.toLocaleString('ko-KR') + '원';
+    }
+
+    /* --------------------------------------------------------------------------
+       계산 및 판단 로직
+       -------------------------------------------------------------------------- */
+    function calculateMetrics() {
+      const totalSpent = state.expenses.reduce((sum, item) => sum + item.amount, 0);
+      const remainingBudget = state.budget - totalSpent;
+      const spendRate = state.budget > 0 ? (totalSpent / state.budget) * 100 : 0;
+      
+      const daysPassed = state.currentDay;
+      const daysLeft = Math.max(1, TOTAL_DAYS - daysPassed + 1); // 오늘 포함 남은 일수
+      const monthRemainingPercent = Math.max(0, ((TOTAL_DAYS - daysPassed + 1) / TOTAL_DAYS) * 100);
+
+      // 이번 달 지출 예산 = (매일 생활비 * 30일) + 예상외 지출 예산
+      const plannedExpense = (state.dailyLifeBudget * TOTAL_DAYS) + state.extraBudget;
+      // 이번달 예산 - 이번달 지출 예산
+      const budgetDiff = state.budget - plannedExpense;
+
+      // 오늘 지출 내역
+      const todayExpenses = state.expenses.filter(item => item.day === state.currentDay);
+      const todaySpent = todayExpenses.reduce((sum, item) => sum + item.amount, 0);
+
+      // 오늘 권장 생활비 = 남은 예산 / 남은 일수
+      const dailyLimit = Math.max(0, Math.floor(remainingBudget / daysLeft));
+      const todayDiff = dailyLimit - todaySpent;
+
+      // 어제 생활비 항목 수
+      const yesterdayLifeExpenses = state.expenses.filter(i => i.day === state.currentDay - 1 && i.category === '생활비');
+
+      return {
+        totalSpent,
+        remainingBudget,
+        spendRate,
+        daysLeft,
+        monthRemainingPercent,
+        plannedExpense,
+        budgetDiff,
+        todayExpenses,
+        todaySpent,
+        dailyLimit,
+        todayDiff,
+        yesterdayLifeExpenses
+      };
+    }
+
+    /* --------------------------------------------------------------------------
+       화면 렌더링 함수
+       -------------------------------------------------------------------------- */
+    function renderApp() {
+      if (!state) {
+        showModal('initModal');
+        updateInitCalculations();
+        return;
+      }
+
+      const m = calculateMetrics();
+
+      // 1. 헤더 날짜 업데이트
+      document.getElementById('displayHeaderDate').innerText = 
+        `11월 ${state.currentDay}일 (${state.currentDay}일차/${TOTAL_DAYS}일)`;
+
+      // 2. 이번달 설정 예산 & 이번달 지출 예산 & 차액 표시
+      document.getElementById('displayConfiguredBudget').innerText = formatWon(state.budget);
+      document.getElementById('displayPlannedExpense').innerText = formatWon(m.plannedExpense);
+      document.getElementById('displayPlannedDetail').innerText = 
+        `(매일 생활비 ${formatWon(state.dailyLifeBudget)}×30일 + 예상외 ${formatWon(state.extraBudget)})`;
+
+      const diffBox = document.getElementById('budgetDiffBox');
+      const diffVal = document.getElementById('displayBudgetDiff');
+      if (m.budgetDiff >= 0) {
+        diffBox.className = 'budget-diff-box';
+        diffVal.className = 'budget-diff-val';
+        diffVal.innerText = `+${formatWon(m.budgetDiff)} (여유 자금)`;
+      } else {
+        diffBox.className = 'budget-diff-box negative';
+        diffVal.className = 'budget-diff-val negative';
+        diffVal.innerText = `-${formatWon(Math.abs(m.budgetDiff))} (지출 예산 초과!)`;
+      }
+
+      // 3. 실제 남은 가용 생활비 잔액
+      const remainingEl = document.getElementById('displayRemainingBudget');
+      if (m.remainingBudget < 0) {
+        remainingEl.innerText = `-${formatWon(Math.abs(m.remainingBudget))} (초과)`;
+        remainingEl.className = 'summary-amount danger';
+      } else {
+        remainingEl.innerText = formatWon(m.remainingBudget);
+        remainingEl.className = 'summary-amount';
+      }
+
+      document.getElementById('displaySpentInfo').innerText = 
+        `실제 지출 ${formatWon(m.totalSpent)} / 예산 ${formatWon(state.budget)}`;
+      document.getElementById('displaySpendRate').innerText = 
+        `${m.spendRate.toFixed(1)}% 소진 · 한 달 ${m.monthRemainingPercent.toFixed(0)}% 남음`;
+
+      const progressBar = document.getElementById('budgetProgressBar');
+      const cappedRate = Math.min(100, Math.max(0, m.spendRate));
+      progressBar.style.width = `${cappedRate}%`;
+
+      if (m.spendRate >= 100) {
+        progressBar.style.backgroundColor = 'var(--danger)';
+      } else if (m.spendRate >= 80) {
+        progressBar.style.backgroundColor = 'var(--warning)';
+      } else {
+        progressBar.style.backgroundColor = 'var(--primary)';
+      }
+
+      // 경고 배너 렌더링
+      renderStatusBanners(m);
+
+      // 4. 오늘 지출 가이드 카드
+      document.getElementById('displayDaysLeftBadge').innerText = `남은 기간: ${m.daysLeft}일`;
+      document.getElementById('displayDailyLimit').innerText = formatWon(m.dailyLimit);
+      document.getElementById('displayTodaySpent').innerText = formatWon(m.todaySpent);
+
+      const todayDiffEl = document.getElementById('displayTodayDiff');
+      const todayCard = document.getElementById('todayCard');
+      todayCard.className = 'card today-budget-card';
+
+      if (m.todayDiff < 0) {
+        todayDiffEl.innerText = `${formatWon(Math.abs(m.todayDiff))} 초과`;
+        todayDiffEl.style.color = 'var(--danger)';
+        todayCard.classList.add('danger-border');
+      } else {
+        todayDiffEl.innerText = `${formatWon(m.todayDiff)} 남음`;
+        todayDiffEl.style.color = 'var(--primary)';
+        if (m.spendRate >= 80) todayCard.classList.add('warning-border');
+      }
+
+      // 5. 어제 생활비 가져오기 버튼 상태
+      const btnImportYesterday = document.getElementById('btnImportYesterday');
+      if (m.yesterdayLifeExpenses.length > 0) {
+        btnImportYesterday.disabled = false;
+        btnImportYesterday.innerText = `📋 어제 생활비(${m.yesterdayLifeExpenses.length}건) 가져오기`;
+      } else {
+        btnImportYesterday.disabled = true;
+        btnImportYesterday.innerText = `📋 어제 생활비 없음`;
+      }
+
+      // 6. 지출 내역 리스트 렌더링
+      renderExpenseList();
+    }
+
+    /* 경고 배너 렌더링 */
+    function renderStatusBanners(m) {
+      const bannerArea = document.getElementById('statusBannerArea');
+      bannerArea.innerHTML = '';
+
+      if (m.spendRate >= 100) {
+        bannerArea.innerHTML = `
+          <div class="alert-banner alert-danger">
+            <span class="alert-icon">🚨</span>
+            <div>
+              <strong>예산 초과 경고!</strong><br>
+              가용 예산보다 <strong>${formatWon(Math.abs(m.remainingBudget))}</strong> 초과되었습니다. 지출을 점검해 주세요!
+            </div>
+          </div>
+        `;
+      } else if (m.spendRate >= 80) {
+        bannerArea.innerHTML = `
+          <div class="alert-banner alert-warning">
+            <span class="alert-icon">⚠️</span>
+            <div>
+              <strong>예산 80% 소진 주의!</strong><br>
+              이번 달 가용 예산의 ${m.spendRate.toFixed(1)}%를 사용했습니다. (한 달 잔여 기간: ${m.monthRemainingPercent.toFixed(0)}%)
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    /* 지출 내역 리스트 렌더링 */
+    function renderExpenseList() {
+      const area = document.getElementById('expenseListArea');
+      
+      let itemsToDisplay = [...state.expenses];
+
+      if (listFilterMode === 'today') {
+        itemsToDisplay = itemsToDisplay.filter(item => item.day === state.currentDay);
+      }
+
+      itemsToDisplay.sort((a, b) => b.day - a.day || b.id - a.id);
+
+      if (itemsToDisplay.length === 0) {
+        area.innerHTML = `<div class="empty-msg">${listFilterMode === 'today' ? '오늘 등록된 지출이 없습니다.' : '등록된 지출 내역이 없습니다.'}</div>`;
+        return;
+      }
+
+      area.innerHTML = itemsToDisplay.map(item => {
+        const icon = CATEGORY_ICONS[item.category] || '💸';
+        const isToday = item.day === state.currentDay;
+        const isExtra = item.category === '예상외 지출';
+
+        let prefTagClass = 'pref-tag';
+        if (item.preference <= 2) prefTagClass += ' low';
+        if (item.preference >= 4) prefTagClass += ' high';
+
+        return `
+          <div class="expense-item">
+            <div class="expense-left">
+              <div class="expense-icon">${icon}</div>
+              <div class="expense-info">
+                <div class="expense-name-row">
+                  <span class="expense-date-badge ${isToday ? 'today' : ''}">11월 ${item.day}일</span>
+                  <span class="expense-name">${escapeHtml(item.name)}</span>
+                </div>
+                <div class="expense-tag-row">
+                  <span class="cat-badge ${isExtra ? 'extra' : 'life'}">${item.category}</span>
+                  <span class="${prefTagClass}">선호도 ${item.preference}점</span>
+                </div>
+              </div>
+            </div>
+            <div class="expense-right">
+              <span class="expense-amt">${formatWon(item.amount)}</span>
+              <button class="btn-del" title="삭제" onclick="deleteExpense(${item.id})">✕</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /* 어제 생활비 가져오기 */
+    function importYesterdayLifeExpenses() {
+      const yesterday = state.currentDay - 1;
+      if (yesterday < 1) {
+        alert('이전 날짜의 기록이 없습니다.');
+        return;
+      }
+
+      const yesterdayItems = state.expenses.filter(i => i.day === yesterday && i.category === '생활비');
+      if (yesterdayItems.length === 0) {
+        alert('어제(11월 ' + yesterday + '일) 기록된 생활비 내역이 없습니다.');
+        return;
+      }
+
+      const summaryText = yesterdayItems.map(i => `• ${i.name} (${formatWon(i.amount)})`).join('\n');
+      if (!confirm(`어제(11월 ${yesterday}일)의 생활비 항목을 오늘로 복사하시겠습니까?\n\n${summaryText}`)) {
+        return;
+      }
+
+      let count = 0;
+      let totalAmount = 0;
+      const baseTime = Date.now();
+
+      yesterdayItems.forEach((item, idx) => {
+        state.expenses.push({
+          id: baseTime + idx,
+          day: state.currentDay,
+          category: '생활비',
+          name: item.name,
+          amount: item.amount,
+          preference: item.preference
+        });
+        count++;
+        totalAmount += item.amount;
+      });
+
+      saveState();
+      renderApp();
+      alert(`어제 생활비 ${count}건(총 ${formatWon(totalAmount)})을 오늘 지출로 간편하게 가져왔습니다!`);
+    }
+
+    /* 지출 추가 및 삭제 */
+    function addExpense() {
+      const nameInput = document.getElementById('inputExpenseName');
+      const amountInput = document.getElementById('inputExpenseAmount');
+
+      const name = nameInput.value.trim();
+      const amount = parseInt(amountInput.value, 10);
+
+      if (!name) {
+        alert('지출 내용을 입력해 주세요.');
+        nameInput.focus();
+        return;
+      }
+
+      if (isNaN(amount) || amount <= 0) {
+        alert('올바른 금액(1원 이상)을 입력해 주세요.');
+        amountInput.focus();
+        return;
+      }
+
+      const newExpense = {
+        id: Date.now(),
+        day: state.currentDay,
+        category: selectedCategory,
+        name: name,
+        amount: amount,
+        preference: selectedPreference
+      };
+
+      state.expenses.push(newExpense);
+      saveState();
+
+      nameInput.value = '';
+      amountInput.value = '';
+
+      renderApp();
+    }
+
+    function deleteExpense(id) {
+      if (!confirm('이 지출 항목을 삭제하시겠습니까?')) return;
+      state.expenses = state.expenses.filter(item => item.id !== id);
+      saveState();
+      renderApp();
+    }
+
+    /* --------------------------------------------------------------------------
+       가용 예산 수정 모달 로직
+       -------------------------------------------------------------------------- */
+    function openEditBudgetModal() {
+      document.getElementById('editBudgetAmount').value = state.budget;
+      showModal('editBudgetModal');
+    }
+
+    function saveEditBudget() {
+      const val = parseInt(document.getElementById('editBudgetAmount').value, 10);
+      if (isNaN(val) || val <= 0) {
+        alert('올바른 예산 금액(1원 이상)을 입력해 주세요.');
+        return;
+      }
+      state.budget = val;
+      saveState();
+      hideModal('editBudgetModal');
+      renderApp();
+    }
+
+    /* --------------------------------------------------------------------------
+       지출변경 모달 로직 (매일 생활비 & 예상외 지출 기입)
+       -------------------------------------------------------------------------- */
+    function openEditExpensePlanModal() {
+      document.getElementById('planDailyLife').value = state.dailyLifeBudget;
+      document.getElementById('planExtraExpense').value = state.extraBudget;
+      updateExpensePlanPreview();
+      showModal('editExpensePlanModal');
+    }
+
+    function updateExpensePlanPreview() {
+      const daily = parseInt(document.getElementById('planDailyLife').value, 10) || 0;
+      const extra = parseInt(document.getElementById('planExtraExpense').value, 10) || 0;
+      const dailyMonth = daily * TOTAL_DAYS;
+      const totalPlanned = dailyMonth + extra;
+      const diff = state.budget - totalPlanned;
+
+      document.getElementById('previewDailyMonth').innerText = formatWon(dailyMonth);
+      document.getElementById('previewTotalPlanned').innerText = formatWon(totalPlanned);
+
+      const previewDiffEl = document.getElementById('previewDiffResult');
+      if (diff >= 0) {
+        previewDiffEl.style.color = 'var(--primary)';
+        previewDiffEl.innerText = `+${formatWon(diff)} (여유 자금)`;
+      } else {
+        previewDiffEl.style.color = 'var(--danger)';
+        previewDiffEl.innerText = `-${formatWon(Math.abs(diff))} (지출 예산 초과!)`;
+      }
+    }
+
+    function saveExpensePlan() {
+      const daily = parseInt(document.getElementById('planDailyLife').value, 10);
+      const extra = parseInt(document.getElementById('planExtraExpense').value, 10);
+
+      if (isNaN(daily) || daily < 0) {
+        alert('매일 소모되는 생활비를 올바르게 입력해 주세요.');
+        return;
+      }
+      if (isNaN(extra) || extra < 0) {
+        alert('예상외 지출 예산을 올바르게 입력해 주세요.');
+        return;
+      }
+
+      state.dailyLifeBudget = daily;
+      state.extraBudget = extra;
+      saveState();
+      hideModal('editExpensePlanModal');
+      renderApp();
+    }
+
+    /* --------------------------------------------------------------------------
+       초기 설정 모달 계산 업데이트
+       -------------------------------------------------------------------------- */
+    function updateInitCalculations() {
+      const bud = parseInt(document.getElementById('initBudgetOnly').value, 10) || 0;
+      const daily = parseInt(document.getElementById('initDailyLife').value, 10) || 0;
+      const extra = parseInt(document.getElementById('initExtraExpense').value, 10) || 0;
+
+      const planned = (daily * TOTAL_DAYS) + extra;
+      const diff = bud - planned;
+
+      document.getElementById('initCalculatedPlanned').innerText = formatWon(planned);
+      const diffEl = document.getElementById('initCalculatedDiff');
+      if (diff >= 0) {
+        diffEl.style.color = 'var(--primary)';
+        diffEl.innerText = `+${formatWon(diff)} (여유 자금)`;
+      } else {
+        diffEl.style.color = 'var(--danger)';
+        diffEl.innerText = `-${formatWon(Math.abs(diff))} (예산 초과!)`;
+      }
+    }
+
+    /* --------------------------------------------------------------------------
+       테스트 버튼: 다음 날로 이동 & 처음부터 다시
+       -------------------------------------------------------------------------- */
+    function moveToNextDay() {
+      if (state.currentDay >= TOTAL_DAYS) {
+        alert('이번 달 마지막 날(30일)에 도달했습니다. 결산이 완료되었습니다.');
+        return;
+      }
+      state.currentDay += 1;
+      saveState();
+      renderApp();
+    }
+
+    function resetAllData() {
+      if (!confirm('정말로 처음부터 다시 시작하시겠습니까?\n저장된 모든 가계부 데이터가 초기화됩니다.')) {
+        return;
+      }
+      localStorage.removeItem(STORAGE_KEY);
+      state = null;
+      showModal('initModal');
+      updateInitCalculations();
+      renderApp();
+    }
+
+    /* --------------------------------------------------------------------------
+       모달 제어 및 유틸
+       -------------------------------------------------------------------------- */
+    function showModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'flex';
+    }
+
+    function hideModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    /* --------------------------------------------------------------------------
+       이벤트 리스너 바인딩
+       -------------------------------------------------------------------------- */
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. 테스트 버튼 2개
+      document.getElementById('btnNextDay').addEventListener('click', moveToNextDay);
+      document.getElementById('btnResetAll').addEventListener('click', resetAllData);
+
+      // 2. 가용 예산 변경 모달
+      document.getElementById('btnOpenEditBudget').addEventListener('click', openEditBudgetModal);
+      document.getElementById('btnCancelEditBudget').addEventListener('click', () => hideModal('editBudgetModal'));
+      document.getElementById('btnSaveEditBudget').addEventListener('click', saveEditBudget);
+
+      // 3. 지출변경 모달 (생활비 & 예상외 지출 기입)
+      document.getElementById('btnOpenEditExpensePlan').addEventListener('click', openEditExpensePlanModal);
+      document.getElementById('planDailyLife').addEventListener('input', updateExpensePlanPreview);
+      document.getElementById('planExtraExpense').addEventListener('input', updateExpensePlanPreview);
+      document.getElementById('btnCancelExpensePlan').addEventListener('click', () => hideModal('editExpensePlanModal'));
+      document.getElementById('btnSaveExpensePlan').addEventListener('click', saveExpensePlan);
+
+      // 4. 어제 생활비 가져오기 퀵 버튼
+      document.getElementById('btnImportYesterday').addEventListener('click', importYesterdayLifeExpenses);
+
+      // 5. 카테고리 2종류 선택
+      const catButtons = document.querySelectorAll('.category-two-btn');
+      catButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          catButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedCategory = btn.dataset.cat;
+        });
+      });
+
+      // 6. 지출 선호도(1~5점) 선택
+      const prefButtons = document.querySelectorAll('.pref-btn');
+      const prefHints = {
+        1: '😭 1점: 충동구매나 안 써도 됐을 소비 (예산 초과 시 절약 1순위)',
+        2: '😕 2점: 조금 아쉬운 소비 (줄일 수 있는 항목)',
+        3: '🙂 3점: 일상적이고 무난한 소비',
+        4: '😊 4점: 만족도가 높고 보람찬 소비',
+        5: '⭐ 5점: 필수 생활비/식비 (어떠한 경우에도 타협 불가)'
+      };
+
+      prefButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          prefButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedPreference = parseInt(btn.dataset.score, 10);
+          document.getElementById('prefHintText').innerText = `💡 ${prefHints[selectedPreference]}`;
+        });
+      });
+
+      // 7. 지출 내역 리스트 필터 탭
+      const tabAll = document.getElementById('tabFilterAll');
+      const tabToday = document.getElementById('tabFilterToday');
+      tabAll.addEventListener('click', () => {
+        tabAll.classList.add('active');
+        tabToday.classList.remove('active');
+        listFilterMode = 'all';
+        renderExpenseList();
+      });
+      tabToday.addEventListener('click', () => {
+        tabToday.classList.add('active');
+        tabAll.classList.remove('active');
+        listFilterMode = 'today';
+        renderExpenseList();
+      });
+
+      // 8. 지출 등록 버튼 & Enter 키 지원
+      document.getElementById('btnAddExpense').addEventListener('click', addExpense);
+      document.getElementById('inputExpenseAmount').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') addExpense();
+      });
+
+      // 9. 초기 설정 모달 이벤트
+      document.getElementById('initBudgetOnly').addEventListener('input', updateInitCalculations);
+      document.getElementById('initDailyLife').addEventListener('input', updateInitCalculations);
+      document.getElementById('initExtraExpense').addEventListener('input', updateInitCalculations);
+
+      document.getElementById('btnSaveInitBudget').addEventListener('click', () => {
+        const bud = parseInt(document.getElementById('initBudgetOnly').value, 10) || 0;
+        const daily = parseInt(document.getElementById('initDailyLife').value, 10) || 0;
+        const extra = parseInt(document.getElementById('initExtraExpense').value, 10) || 0;
+
+        if (bud <= 0) {
+          alert('가용 예산을 1원 이상 입력해 주세요.');
+          return;
+        }
+
+        state = {
+          currentDay: 1,
+          budget: bud,
+          dailyLifeBudget: daily,
+          extraBudget: extra,
+          expenses: []
+        };
+        saveState();
+        hideModal('initModal');
+        renderApp();
+      });
+
+      // 초기 기동: 저장된 상태가 없으면 기본값으로 깔끔하게 초기화 (샘플 데이터 로드 완전 제거)
+      if (!state) {
+        state = {
+          currentDay: 1,
+          budget: 600000,
+          dailyLifeBudget: 15000,
+          extraBudget: 100000,
+          expenses: []
+        };
+        saveState();
+      }
+      renderApp();
+    });
+  </script>
+</body>
+</html>

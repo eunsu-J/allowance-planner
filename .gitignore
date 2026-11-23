@@ -1,0 +1,9 @@
+# 개인정보 및 수업 원본 파일 제외
+*.hwpx
+*.pdf
+*.zip
+*.lnk
+*.url
+설계서.*
+지시문 카드.*
+.system_generated/
