@@ -217,7 +217,7 @@
       background: var(--primary-light);
     }
 
-    /* 예산 차액 (이번달 예산 - 지출 예산) 박스 */
+    /* 예산 차액 박스 */
     .budget-diff-box {
       background: #f0f7ff;
       border: 1px solid #bae0fd;
@@ -804,7 +804,7 @@
           <button type="button" class="btn-edit-budget" id="btnOpenEditBudget">✏️ 예산 변경</button>
         </div>
 
-        <!-- 2) 이번달 지출 예산 행 (신규) -->
+        <!-- 2) 이번달 지출 예산 행 (날이 넘어갈 때마다 남은 예정액 실시간 반영) -->
         <div class="budget-header-row">
           <div class="budget-info-text">
             <span>이번 달 지출 예산: </span>
@@ -812,11 +812,14 @@
             <span style="font-size:11px; color:var(--text-sub); display:block; margin-top:2px;" id="displayPlannedDetail">
               (매일 생활비 15,000원×30일 + 예상외 100,000원)
             </span>
+            <span style="font-size:11px; color:var(--primary); font-weight:700; display:block; margin-top:2px;" id="displayRemainingPlannedDetail">
+              ⏳ 남은 기간 지출 예정: 550,000원
+            </span>
           </div>
           <button type="button" class="btn-edit-budget" id="btnOpenEditExpensePlan">✏️ 지출변경</button>
         </div>
 
-        <!-- 3) 이번달 예산 - 이번달 지출 예산 계산 결과 출력 박스 (신규) -->
+        <!-- 3) 이번달 예산 - 이번달 지출 예산 계산 결과 출력 박스 -->
         <div class="budget-diff-box" id="budgetDiffBox">
           <div class="budget-diff-label">
             <span>이번달 예산 − 지출 예산:</span>
@@ -824,9 +827,12 @@
           <div class="budget-diff-val" id="displayBudgetDiff">+50,000원 (여유 자금)</div>
         </div>
 
-        <!-- 남은 실제 가용 생활비 잔액 -->
+        <!-- 남은 실제 가용 생활비 잔액 (날이 넘어갈 때마다 매일 생활비 자동 감축) -->
         <div class="summary-label" style="margin-top: 6px;">
           <span>현재 남은 생활비 잔액</span>
+          <span style="font-size:11px; color:var(--text-sub);" id="dailyDeductNotice">
+            (매일 넘길 때마다 <span id="noticeDailyAmt">15,000원</span> 자동 감축)
+          </span>
         </div>
         <div class="summary-amount" id="displayRemainingBudget">0원</div>
         
@@ -868,7 +874,7 @@
       <!-- 3. 실행 기록: 지출 입력 카드 -->
       <section class="card">
         <div class="form-header-row">
-          <h2 class="form-title">✏️ 지출 기록하기</h2>
+          <h2 class="form-title">✏️ 추가 지출 기록하기</h2>
           <button type="button" class="btn-import-yesterday" id="btnImportYesterday">
             📋 어제 생활비 가져오기
           </button>
@@ -918,7 +924,7 @@
         <button type="button" id="btnAddExpense" class="btn-submit">지출 등록하기</button>
       </section>
 
-      <!-- 2. 지출 내역 리스트 (다음 날이 되어도 날짜와 함께 누적 보관) -->
+      <!-- 2. 지출 내역 리스트 (날짜별 누적 보관) -->
       <section class="card">
         <div class="list-filter-bar">
           <h2 class="form-title" style="margin-bottom:0;">📋 지출 내역 기록지</h2>
@@ -961,8 +967,8 @@
         
         <div class="input-row">
           <label for="planDailyLife">매일 소모되는 1일 생활비 (원)</label>
-          <input type="number" id="planDailyLife" class="input-field" placeholder="예: 15000" min="1000" step="1000">
-          <span style="font-size:11px; color:var(--text-sub);">* 30일 기준 총 <strong id="previewDailyMonth">450,000원</strong></span>
+          <input type="number" id="planDailyLife" class="input-field" placeholder="예: 15000" min="0" step="1000">
+          <span style="font-size:11px; color:var(--text-sub);">* 30일 기준 총 <strong id="previewDailyMonth">450,000원</strong> (날이 넘어갈 때마다 자동 감축)</span>
         </div>
 
         <div class="input-row" style="margin-top:10px;">
@@ -1030,7 +1036,7 @@
     /* ==========================================================================
        가계부J — 핵심 비즈니스 로직 및 로컬 스토리지 상태 머신
        ========================================================================== */
-    const STORAGE_KEY = 'kakeiboJ_app_state_v4';
+    const STORAGE_KEY = 'kakeiboJ_app_state_v5';
     const TOTAL_DAYS = 30;
 
     const CATEGORY_ICONS = {
@@ -1084,8 +1090,15 @@
       const daysLeft = Math.max(1, TOTAL_DAYS - daysPassed + 1); // 오늘 포함 남은 일수
       const monthRemainingPercent = Math.max(0, ((TOTAL_DAYS - daysPassed + 1) / TOTAL_DAYS) * 100);
 
-      // 이번 달 지출 예산 = (매일 생활비 * 30일) + 예상외 지출 예산
+      // 이번 달 총 지출 예산 (30일 기준)
       const plannedExpense = (state.dailyLifeBudget * TOTAL_DAYS) + state.extraBudget;
+      // 남은 기간 지출 예정액 = (남은 일수 * 매일 생활비) + 예상외 지출 잔여 예산
+      const extraSpent = state.expenses
+        .filter(i => i.category === '예상외 지출')
+        .reduce((sum, i) => sum + i.amount, 0);
+      const remainingExtraBudget = Math.max(0, state.extraBudget - extraSpent);
+      const remainingPlannedExpense = (state.dailyLifeBudget * daysLeft) + remainingExtraBudget;
+
       // 이번달 예산 - 이번달 지출 예산
       const budgetDiff = state.budget - plannedExpense;
 
@@ -1107,6 +1120,7 @@
         daysLeft,
         monthRemainingPercent,
         plannedExpense,
+        remainingPlannedExpense,
         budgetDiff,
         todayExpenses,
         todaySpent,
@@ -1137,6 +1151,11 @@
       document.getElementById('displayPlannedExpense').innerText = formatWon(m.plannedExpense);
       document.getElementById('displayPlannedDetail').innerText = 
         `(매일 생활비 ${formatWon(state.dailyLifeBudget)}×30일 + 예상외 ${formatWon(state.extraBudget)})`;
+      
+      // 남은 기간 지출 예정액 표시
+      document.getElementById('displayRemainingPlannedDetail').innerText = 
+        `⏳ 남은 기간(${m.daysLeft}일) 지출 예정: ${formatWon(m.remainingPlannedExpense)}`;
+      document.getElementById('noticeDailyAmt').innerText = formatWon(state.dailyLifeBudget);
 
       const diffBox = document.getElementById('budgetDiffBox');
       const diffVal = document.getElementById('displayBudgetDiff');
@@ -1150,7 +1169,7 @@
         diffVal.innerText = `-${formatWon(Math.abs(m.budgetDiff))} (지출 예산 초과!)`;
       }
 
-      // 3. 실제 남은 가용 생활비 잔액
+      // 3. 실제 남은 가용 생활비 잔액 (날이 넘어가면 매일 생활비 자동 감축 반영)
       const remainingEl = document.getElementById('displayRemainingBudget');
       if (m.remainingBudget < 0) {
         remainingEl.innerText = `-${formatWon(Math.abs(m.remainingBudget))} (초과)`;
@@ -1161,7 +1180,7 @@
       }
 
       document.getElementById('displaySpentInfo').innerText = 
-        `실제 지출 ${formatWon(m.totalSpent)} / 예산 ${formatWon(state.budget)}`;
+        `누적 지출 ${formatWon(m.totalSpent)} / 예산 ${formatWon(state.budget)}`;
       document.getElementById('displaySpendRate').innerText = 
         `${m.spendRate.toFixed(1)}% 소진 · 한 달 ${m.monthRemainingPercent.toFixed(0)}% 남음`;
 
@@ -1177,7 +1196,6 @@
         progressBar.style.backgroundColor = 'var(--primary)';
       }
 
-      // 경고 배너 렌더링
       renderStatusBanners(m);
 
       // 4. 오늘 지출 가이드 카드
@@ -1398,7 +1416,7 @@
     }
 
     /* --------------------------------------------------------------------------
-       지출변경 모달 로직 (매일 생활비 & 예상외 지출 기입)
+       지출변경 모달 로직
        -------------------------------------------------------------------------- */
     function openEditExpensePlanModal() {
       document.getElementById('planDailyLife').value = state.dailyLifeBudget;
@@ -1470,16 +1488,37 @@
     }
 
     /* --------------------------------------------------------------------------
-       테스트 버튼: 다음 날로 이동 & 처음부터 다시
+       테스트 버튼: 다음 날로 이동 (매일 생활비 자동 감축 핵심 로직)
        -------------------------------------------------------------------------- */
     function moveToNextDay() {
       if (state.currentDay >= TOTAL_DAYS) {
         alert('이번 달 마지막 날(30일)에 도달했습니다. 결산이 완료되었습니다.');
         return;
       }
+
+      const pastDay = state.currentDay;
+      const dailyAmt = state.dailyLifeBudget || 0;
+
+      // 1. 날이 넘어갈 때마다 어제 날짜의 '일일 기본 생활비' 자동 기록 및 현재 생활비에서 감축
+      if (dailyAmt > 0) {
+        state.expenses.push({
+          id: Date.now(),
+          day: pastDay,
+          category: '생활비',
+          name: '일일 기본 생활비',
+          amount: dailyAmt,
+          preference: 5
+        });
+      }
+
+      // 2. 날짜 증가
       state.currentDay += 1;
       saveState();
       renderApp();
+
+      if (dailyAmt > 0) {
+        alert(`📅 11월 ${state.currentDay}일로 이동했습니다.\n어제(11월 ${pastDay}일) 매일 생활비 ${formatWon(dailyAmt)}가 현재 생활비에서 감축되었습니다.`);
+      }
     }
 
     function resetAllData() {
@@ -1617,7 +1656,7 @@
         renderApp();
       });
 
-      // 초기 기동: 저장된 상태가 없으면 기본값으로 깔끔하게 초기화 (샘플 데이터 로드 완전 제거)
+      // 초기 기동
       if (!state) {
         state = {
           currentDay: 1,
