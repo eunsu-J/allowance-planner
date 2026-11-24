@@ -706,7 +706,7 @@
       background: #fff;
       border-radius: 20px 20px 0 0;
       padding: 24px 20px 32px;
-      max-height: 85vh;
+      max-height: 90vh;
       overflow-y: auto;
       box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.15);
       animation: slideUp 0.25s ease;
@@ -754,6 +754,129 @@
       font-weight: 700;
       color: #fff;
       cursor: pointer;
+    }
+
+    /* 달력 전용 스타일 */
+    .btn-open-calendar {
+      width: 100%;
+      padding: 10px 14px;
+      background: #fff0f1;
+      border: 1.5px dashed var(--danger);
+      color: var(--danger);
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      transition: background 0.15s;
+    }
+
+    .btn-open-calendar:active {
+      background: #ffe3e6;
+    }
+
+    .calendar-container {
+      background: #fafbfc;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-sub);
+      margin-bottom: 8px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .calendar-day-cell {
+      min-height: 46px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 2px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s;
+    }
+
+    .calendar-day-cell:active {
+      transform: scale(0.96);
+    }
+
+    .calendar-day-cell.selected {
+      border: 2px solid var(--primary);
+      background: var(--primary-light);
+    }
+
+    .calendar-day-cell.has-extra {
+      background: #fff5f5;
+      border-color: #ffc9c9;
+    }
+
+    .calendar-day-num {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .calendar-extra-badge {
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--danger);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    /* 선택된 날짜 예상외 지출 폼 및 목록 */
+    .calendar-selected-area {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+
+    .calendar-sub-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .scheduled-extra-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-bottom: 6px;
     }
 
     @keyframes fadeIn {
@@ -827,7 +950,7 @@
           <div class="budget-diff-val" id="displayBudgetDiff">+50,000원 (여유 자금)</div>
         </div>
 
-        <!-- 남은 실제 가용 생활비 잔액 (날이 넘어갈 때마다 매일 생활비 자동 감축) -->
+        <!-- 남은 실제 가용 생활비 잔액 -->
         <div class="summary-label" style="margin-top: 6px;">
           <span>현재 남은 생활비 잔액</span>
           <span style="font-size:11px; color:var(--text-sub);" id="dailyDeductNotice">
@@ -841,7 +964,7 @@
             <div class="progress-bar-fill" id="budgetProgressBar"></div>
           </div>
           <div class="progress-meta">
-            <span id="displaySpentInfo">실제 지출 0원 / 예산 0원</span>
+            <span id="displaySpentInfo">누적 지출 0원 / 예산 0원</span>
             <span id="displaySpendRate" class="spend-speed-badge">0% 소진 · 한 달 100% 남음</span>
           </div>
         </div>
@@ -959,7 +1082,7 @@
       </div>
     </div>
 
-    <!-- 3. 지출변경 모달 (매일 생활비 & 예상외 지출 기입) -->
+    <!-- 3. 지출변경 모달 (매일 생활비 & 예상외 지출 기입 + 달력 연동 버튼) -->
     <div class="modal-overlay" id="editExpensePlanModal">
       <div class="modal-sheet">
         <h2 class="modal-title">📊 이번 달 지출 예산 설정</h2>
@@ -972,8 +1095,13 @@
         </div>
 
         <div class="input-row" style="margin-top:10px;">
-          <label for="planExtraExpense">예상외 지출 예산 (쇼핑·여행 등, 원)</label>
+          <label for="planExtraExpense">예상외 지출 예산 총합 (원)</label>
           <input type="number" id="planExtraExpense" class="input-field" placeholder="예: 100000" min="0" step="10000">
+          
+          <!-- 요청사항: 예상외 지출 달력 버튼 -->
+          <button type="button" class="btn-open-calendar" id="btnOpenCalendarModal">
+            📅 달력에서 날짜별 예상외 지출 지정 및 기록하기
+          </button>
         </div>
 
         <div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:14px; margin:14px 0; font-size:13px;">
@@ -994,7 +1122,63 @@
       </div>
     </div>
 
-    <!-- 1. 초기 예산 설정 모달 (최초 실행 또는 '처음부터 다시' 시 오픈) -->
+    <!-- 4. 예상외 지출 달력 모달 (날짜 선택 후 예상외 지출 기록) -->
+    <div class="modal-overlay" id="calendarExpenseModal">
+      <div class="modal-sheet">
+        <h2 class="modal-title">📅 예상외 지출 달력</h2>
+        <p class="modal-desc">날짜를 콕 찍어 여행·쇼핑 등 예상외 지출을 미리 계획하고 기록하세요.</p>
+        
+        <!-- 달력 뷰 -->
+        <div class="calendar-container">
+          <div class="calendar-weekdays">
+            <span style="color:#e03131;">일</span>
+            <span>월</span>
+            <span>화</span>
+            <span>수</span>
+            <span>목</span>
+            <span>금</span>
+            <span style="color:#1971c2;">토</span>
+          </div>
+          <div class="calendar-grid" id="calendarGridArea">
+            <!-- JS로 1일~30일 동적 생성 -->
+          </div>
+        </div>
+
+        <!-- 선택된 날짜의 예상외 지출 입력 및 리스트 -->
+        <div class="calendar-selected-area" id="calendarSelectedArea">
+          <div class="calendar-sub-title">
+            <span id="selectedDateTitle">11월 1일 예상외 지출</span>
+            <span id="selectedDateTotal" style="font-size:12px; color:var(--danger); font-weight:700;">0원</span>
+          </div>
+
+          <!-- 새 예상외 지출 추가 입력창 -->
+          <div style="display:flex; gap:6px; margin-bottom:10px;">
+            <input type="text" id="inputCalItemName" class="input-field" placeholder="내용 (예: KTX, 옷 쇼핑)" style="flex:2; height:38px; font-size:13px;" lang="ko">
+            <input type="number" id="inputCalItemAmount" class="input-field" placeholder="금액" style="flex:1.5; height:38px; font-size:13px;" min="1000" step="1000">
+            <button type="button" class="btn-edit-budget" id="btnAddCalItem" style="height:38px; padding:0 12px; font-size:12px;">등록</button>
+          </div>
+
+          <!-- 선택된 날짜에 등록된 항목 리스트 -->
+          <div id="selectedDateItemList">
+            <div style="font-size:12px; color:var(--text-sub); text-align:center; padding:10px 0;">
+              선택한 날짜에 등록된 예상외 지출이 없습니다.
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; font-size:13px; font-weight:700; background:var(--bg); padding:10px 14px; border-radius:10px;">
+          <span>달력 전체 예상외 지출 합계:</span>
+          <strong id="calAllTotalAmount" style="color:var(--danger); font-size:15px;">0원</strong>
+        </div>
+
+        <div class="modal-btn-group">
+          <button type="button" class="btn-modal-cancel" id="btnCloseCalendarModal">닫기</button>
+          <button type="button" class="btn-modal-apply" id="btnApplyCalendarToPlan">지출 예산에 적용</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. 초기 예산 설정 모달 -->
     <div class="modal-overlay" id="initModal">
       <div class="modal-sheet">
         <h2 class="modal-title">💰 한 달 예산 설정</h2>
@@ -1036,7 +1220,7 @@
     /* ==========================================================================
        가계부J — 핵심 비즈니스 로직 및 로컬 스토리지 상태 머신
        ========================================================================== */
-    const STORAGE_KEY = 'kakeiboJ_app_state_v5';
+    const STORAGE_KEY = 'kakeiboJ_app_state_v6';
     const TOTAL_DAYS = 30;
 
     const CATEGORY_ICONS = {
@@ -1050,6 +1234,9 @@
     let selectedPreference = 3;
     let listFilterMode = 'all';
 
+    // 달력 선택 날짜 (기본 1일)
+    let selectedCalDay = 1;
+
     /* --------------------------------------------------------------------------
        상태 로드 및 저장 (localStorage)
        -------------------------------------------------------------------------- */
@@ -1057,7 +1244,11 @@
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
-          return JSON.parse(raw);
+          const parsed = JSON.parse(raw);
+          if (!parsed.scheduledExtraExpenses) {
+            parsed.scheduledExtraExpenses = [];
+          }
+          return parsed;
         }
       } catch (e) {
         console.error('Failed to load state', e);
@@ -1092,7 +1283,8 @@
 
       // 이번 달 총 지출 예산 (30일 기준)
       const plannedExpense = (state.dailyLifeBudget * TOTAL_DAYS) + state.extraBudget;
-      // 남은 기간 지출 예정액 = (남은 일수 * 매일 생활비) + 예상외 지출 잔여 예산
+      
+      // 남은 기간 지출 예정액
       const extraSpent = state.expenses
         .filter(i => i.category === '예상외 지출')
         .reduce((sum, i) => sum + i.amount, 0);
@@ -1106,7 +1298,7 @@
       const todayExpenses = state.expenses.filter(item => item.day === state.currentDay);
       const todaySpent = todayExpenses.reduce((sum, item) => sum + item.amount, 0);
 
-      // 오늘 권장 생활비 = 남은 예산 / 남은 일수
+      // 오늘 권장 생활비
       const dailyLimit = Math.max(0, Math.floor(remainingBudget / daysLeft));
       const todayDiff = dailyLimit - todaySpent;
 
@@ -1169,7 +1361,7 @@
         diffVal.innerText = `-${formatWon(Math.abs(m.budgetDiff))} (지출 예산 초과!)`;
       }
 
-      // 3. 실제 남은 가용 생활비 잔액 (날이 넘어가면 매일 생활비 자동 감축 반영)
+      // 3. 실제 남은 가용 생활비 잔액
       const remainingEl = document.getElementById('displayRemainingBudget');
       if (m.remainingBudget < 0) {
         remainingEl.innerText = `-${formatWon(Math.abs(m.remainingBudget))} (초과)`;
@@ -1396,6 +1588,137 @@
     }
 
     /* --------------------------------------------------------------------------
+       달력 예상외 지출 로직 (신규)
+       -------------------------------------------------------------------------- */
+    function openCalendarModal() {
+      renderCalendar();
+      renderSelectedCalendarDayDetails();
+      showModal('calendarExpenseModal');
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGridArea');
+      grid.innerHTML = '';
+
+      if (!state.scheduledExtraExpenses) {
+        state.scheduledExtraExpenses = [];
+      }
+
+      for (let day = 1; day <= TOTAL_DAYS; day++) {
+        const dayExpenses = state.scheduledExtraExpenses.filter(e => e.day === day);
+        const dayTotal = dayExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day-cell';
+        if (day === selectedCalDay) cell.classList.add('selected');
+        if (dayTotal > 0) cell.classList.add('has-extra');
+
+        cell.innerHTML = `
+          <span class="calendar-day-num">${day}</span>
+          ${dayTotal > 0 ? `<span class="calendar-extra-badge">⚡${formatWonShort(dayTotal)}</span>` : ''}
+        `;
+
+        cell.addEventListener('click', () => {
+          selectedCalDay = day;
+          renderCalendar();
+          renderSelectedCalendarDayDetails();
+        });
+
+        grid.appendChild(cell);
+      }
+
+      // 전체 달력 예상외 지출 합계
+      const allTotal = state.scheduledExtraExpenses.reduce((sum, e) => sum + e.amount, 0);
+      document.getElementById('calAllTotalAmount').innerText = formatWon(allTotal);
+    }
+
+    function formatWonShort(amt) {
+      if (amt >= 10000) {
+        return Math.floor(amt / 10000) + '만';
+      }
+      return formatWon(amt);
+    }
+
+    function renderSelectedCalendarDayDetails() {
+      document.getElementById('selectedDateTitle').innerText = `11월 ${selectedCalDay}일 예상외 지출`;
+      const listArea = document.getElementById('selectedDateItemList');
+      
+      const dayItems = state.scheduledExtraExpenses.filter(e => e.day === selectedCalDay);
+      const dayTotal = dayItems.reduce((sum, e) => sum + e.amount, 0);
+      document.getElementById('selectedDateTotal').innerText = `총 ${formatWon(dayTotal)}`;
+
+      if (dayItems.length === 0) {
+        listArea.innerHTML = `
+          <div style="font-size:12px; color:var(--text-sub); text-align:center; padding:10px 0;">
+            11월 ${selectedCalDay}일에 등록된 예상외 지출이 없습니다.
+          </div>
+        `;
+        return;
+      }
+
+      listArea.innerHTML = dayItems.map(item => `
+        <div class="scheduled-extra-item">
+          <div>
+            <strong>${escapeHtml(item.name)}</strong>
+            <span style="color:var(--danger); font-weight:700; margin-left:6px;">${formatWon(item.amount)}</span>
+          </div>
+          <button type="button" class="btn-del" onclick="deleteCalendarItem(${item.id})">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function addCalendarItem() {
+      const nameInput = document.getElementById('inputCalItemName');
+      const amountInput = document.getElementById('inputCalItemAmount');
+
+      const name = nameInput.value.trim();
+      const amount = parseInt(amountInput.value, 10);
+
+      if (!name) {
+        alert('예상외 지출 내용을 입력해 주세요.');
+        nameInput.focus();
+        return;
+      }
+
+      if (isNaN(amount) || amount <= 0) {
+        alert('올바른 금액을 입력해 주세요.');
+        amountInput.focus();
+        return;
+      }
+
+      const newItem = {
+        id: Date.now(),
+        day: selectedCalDay,
+        name: name,
+        amount: amount
+      };
+
+      state.scheduledExtraExpenses.push(newItem);
+      saveState();
+
+      nameInput.value = '';
+      amountInput.value = '';
+
+      renderCalendar();
+      renderSelectedCalendarDayDetails();
+    }
+
+    window.deleteCalendarItem = function(id) {
+      state.scheduledExtraExpenses = state.scheduledExtraExpenses.filter(item => item.id !== id);
+      saveState();
+      renderCalendar();
+      renderSelectedCalendarDayDetails();
+    };
+
+    function applyCalendarToPlan() {
+      const allTotal = state.scheduledExtraExpenses.reduce((sum, e) => sum + e.amount, 0);
+      document.getElementById('planExtraExpense').value = allTotal;
+      updateExpensePlanPreview();
+      hideModal('calendarExpenseModal');
+      alert(`달력에 기록된 예상외 지출 총합(${formatWon(allTotal)})이 지출 예산에 적용되었습니다!`);
+    }
+
+    /* --------------------------------------------------------------------------
        가용 예산 수정 모달 로직
        -------------------------------------------------------------------------- */
     function openEditBudgetModal() {
@@ -1488,7 +1811,7 @@
     }
 
     /* --------------------------------------------------------------------------
-       테스트 버튼: 다음 날로 이동 (매일 생활비 자동 감축 핵심 로직)
+       테스트 버튼: 다음 날로 이동 (매일 생활비 자동 감축)
        -------------------------------------------------------------------------- */
     function moveToNextDay() {
       if (state.currentDay >= TOTAL_DAYS) {
@@ -1568,12 +1891,21 @@
       document.getElementById('btnCancelEditBudget').addEventListener('click', () => hideModal('editBudgetModal'));
       document.getElementById('btnSaveEditBudget').addEventListener('click', saveEditBudget);
 
-      // 3. 지출변경 모달 (생활비 & 예상외 지출 기입)
+      // 3. 지출변경 모달
       document.getElementById('btnOpenEditExpensePlan').addEventListener('click', openEditExpensePlanModal);
       document.getElementById('planDailyLife').addEventListener('input', updateExpensePlanPreview);
       document.getElementById('planExtraExpense').addEventListener('input', updateExpensePlanPreview);
       document.getElementById('btnCancelExpensePlan').addEventListener('click', () => hideModal('editExpensePlanModal'));
       document.getElementById('btnSaveExpensePlan').addEventListener('click', saveExpensePlan);
+
+      // 달력 열기 버튼 (신규)
+      document.getElementById('btnOpenCalendarModal').addEventListener('click', openCalendarModal);
+      document.getElementById('btnCloseCalendarModal').addEventListener('click', () => hideModal('calendarExpenseModal'));
+      document.getElementById('btnApplyCalendarToPlan').addEventListener('click', applyCalendarToPlan);
+      document.getElementById('btnAddCalItem').addEventListener('click', addCalendarItem);
+      document.getElementById('inputCalItemAmount').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') addCalendarItem();
+      });
 
       // 4. 어제 생활비 가져오기 퀵 버튼
       document.getElementById('btnImportYesterday').addEventListener('click', importYesterdayLifeExpenses);
@@ -1649,6 +1981,7 @@
           budget: bud,
           dailyLifeBudget: daily,
           extraBudget: extra,
+          scheduledExtraExpenses: [],
           expenses: []
         };
         saveState();
@@ -1663,8 +1996,12 @@
           budget: 600000,
           dailyLifeBudget: 15000,
           extraBudget: 100000,
+          scheduledExtraExpenses: [],
           expenses: []
         };
+        saveState();
+      } else if (!state.scheduledExtraExpenses) {
+        state.scheduledExtraExpenses = [];
         saveState();
       }
       renderApp();
